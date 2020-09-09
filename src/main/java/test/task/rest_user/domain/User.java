@@ -1,16 +1,11 @@
 package test.task.rest_user.domain;
 
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import lombok.*;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.Size;
-import java.time.LocalDateTime;
 import java.util.Set;
-import java.util.StringJoiner;
 
 @Entity
 @Getter @Setter
@@ -21,7 +16,7 @@ import java.util.StringJoiner;
 public class User{
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @JsonView({Views.Id.class})
     private Integer id;
 
@@ -37,7 +32,7 @@ public class User{
     @JsonView({Views.FullUser.class})
     private String password;
 
-    @ElementCollection(targetClass = Role.class, fetch = FetchType.LAZY)
+    @ElementCollection(targetClass = Role.class, fetch = FetchType.EAGER)
     @CollectionTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "role_name")

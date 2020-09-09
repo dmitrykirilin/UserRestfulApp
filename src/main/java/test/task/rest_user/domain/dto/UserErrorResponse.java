@@ -2,16 +2,17 @@ package test.task.rest_user.domain.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import javax.validation.constraints.NotEmpty;
-import java.util.Map;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class UserErrorResponse {
 
         private Boolean success;
 
-        private Map<String, String> errors;
+        private List<String> errors;
 
 }

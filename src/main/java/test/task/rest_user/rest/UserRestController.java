@@ -6,10 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import test.task.rest_user.domain.Role;
 import test.task.rest_user.domain.User;
 import test.task.rest_user.domain.Views;
 import test.task.rest_user.domain.dto.UserDto;
@@ -17,8 +17,8 @@ import test.task.rest_user.services.UserService;
 import test.task.rest_user.util.PasswordValidator;
 
 import javax.validation.Valid;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -57,44 +57,38 @@ public class UserRestController {
         return ResponseEntity.ok("User has removed successfully!");
     }
 
-    //  User updating.
-    @PutMapping(value = "{user}/edit")
+    //  User updating handler.
+    @PutMapping(value = "{user}/edit", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> updateUser(@PathVariable("user") User userFromDB,
-                                            @RequestBody @Valid UserDto user,
+                                            @RequestBody @Valid UserDto userDto,
                                              BindingResult bindingResult) throws JsonProcessingException {
-        if (userFromDB == null || user == null) {
+        if (userFromDB == null || userDto == null) {
             return new ResponseEntity<>("Cannot found user with such id", HttpStatus.NOT_FOUND);
         }
 
-        //        Validation.
-        passwordValidator.validate(user, bindingResult);
+        //  Validation.
+        passwordValidator.validate(userDto, bindingResult);
         if(bindingResult.hasErrors()){
             String jsonResponse = getJSONResponse(bindingResult);
             return new ResponseEntity<>(jsonResponse, HttpStatus.BAD_REQUEST);
         }
 
-        //  Filling new data.
-        if(userFromDB.getRoles() != null) {
-            userFromDB.getRoles().clear();
-        }
-        userFromDB.setName(user.getName());
-        userFromDB.setLogin(user.getLogin());
-        userFromDB.setPassword(user.getPassword());
-        userFromDB.setRoles(new HashSet<>());
-        for (int role : user.getRoles()) {
-            userFromDB.getRoles().add(Role.values()[role - 1]);
+        // Update user.
+        try {
+            userService.updateUserFromDto(userFromDB, userDto);
+        }catch (IllegalArgumentException ex){
+            return getObjectResponseEntity(ex);
         }
 
-        //   Saving to DB.
-        userService.save(userFromDB);
         return ResponseEntity.ok(new HashMap<String, Boolean>(){{
             put("Success", true);
         }});
     }
 
 
-    //  User adding.
-    @PostMapping(value = "add")
+
+    //  User adding handler.
+    @PostMapping(value = "add", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> addNewUser(@RequestBody @Valid UserDto userDto,
                                              BindingResult bindingResult) throws JsonProcessingException {
         if (userDto == null) {
@@ -116,15 +110,11 @@ public class UserRestController {
             return new ResponseEntity<>(jsonResponse, HttpStatus.BAD_REQUEST);
         }
 
-        //  Adding new user.
+        //  Create new user.
         try {
             userService.createNewUserFromDto(userDto);
         }catch (IllegalArgumentException ex){
-            String jsonResponse = mapToJson(new HashMap<String, Object>(){{
-                put("success", "false");
-                put("errors", ex.getMessage());
-            }});
-            return new ResponseEntity<>(jsonResponse, HttpStatus.BAD_REQUEST);
+            return getObjectResponseEntity(ex);
         }
 
         return ResponseEntity.ok(new HashMap<String, Boolean>(){{
@@ -151,5 +141,14 @@ public class UserRestController {
     public static List<String> getErrors(BindingResult bindingResult) {
         return bindingResult.getFieldErrors().stream()
                 .map(DefaultMessageSourceResolvable::getDefaultMessage).collect(Collectors.toList());
+    }
+
+
+    private ResponseEntity<Object> getObjectResponseEntity(IllegalArgumentException ex) throws JsonProcessingException {
+        String jsonResponse = mapToJson(new HashMap<String, Object>(){{
+            put("success", "false");
+            put("errors", Collections.singletonList(ex.getMessage()));
+        }});
+        return new ResponseEntity<>(jsonResponse, HttpStatus.BAD_REQUEST);
     }
 }

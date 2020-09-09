@@ -16,7 +16,5 @@ public class RestUserApplication implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments arg0) throws Exception {
 
-//        userService.addStartedUsers();
-
     }
 }

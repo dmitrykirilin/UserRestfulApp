@@ -10,6 +10,7 @@ import test.task.rest_user.repository.UserRepo;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)
@@ -35,6 +36,37 @@ public class UserService {
     @Transactional
     public User createNewUserFromDto(UserDto userDto){
         User user = new User(userDto.getName(), userDto.getLogin(), userDto.getPassword(), new HashSet<>());
+        tryWriteNewRoles(userDto, user);
+        return save(user);
+    }
+
+    @Transactional
+    public User updateUserFromDto(User user, UserDto userDto){
+        if(user.getRoles() != null) {
+            user.getRoles().clear();
+        }
+        user.setName(userDto.getName());
+        user.setLogin(userDto.getLogin());
+        user.setPassword(userDto.getPassword());
+        user.setRoles(new HashSet<>());
+        tryWriteNewRoles(userDto, user);
+        return save(user);
+    }
+
+    public User getUserByLogin(String login) {
+        return userRepo.getUserByLogin(login);
+    }
+
+    public User findById(Integer id) {
+        return userRepo.findById(id).orElse(null);
+    }
+
+    public Optional<User> findByName(String name) {
+        return userRepo.findByName(name);
+    }
+
+
+    private void tryWriteNewRoles(UserDto userDto, User user) {
         try{
             for (int role : userDto.getRoles()) {
                 user.getRoles().add(Role.values()[role - 1]);
@@ -42,11 +74,6 @@ public class UserService {
         }catch (Exception e){
             throw new IllegalArgumentException("Invalid roles data in DtoUser!");
         }
-        return save(user);
-    }
-
-    public User getUserByLogin(String login) {
-        return userRepo.getUserByLogin(login);
     }
 }
 

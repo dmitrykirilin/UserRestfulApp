@@ -3,7 +3,6 @@ package test.task.rest_user.util;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
-import test.task.rest_user.domain.User;
 import test.task.rest_user.domain.dto.UserDto;
 
 @Component
